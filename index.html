@@ -34,6 +34,7 @@ main{flex:1;overflow-y:auto;padding:6px 0 160px}
 .c .hr{position:absolute;bottom:2px;font-size:9px;font-style:normal}
 .c.p{border:2px solid #facc15;box-shadow:inset 0 0 10px #facc1555}
 .c .ev{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:#38bdf8}
+.c .ev.d{background:#4b5675}
 .leg{padding:10px 12px;color:var(--mu);font-size:12px;display:flex;gap:14px;flex-wrap:wrap}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:8px 10px;padding:12px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -91,6 +92,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 let S={shifts:{},partner:{},events:[],exp:[],set:{u:0,s:0}};
 try{const r=localStorage.getItem('turnos_v1');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
 const save=()=>{try{localStorage.setItem('turnos_v1',JSON.stringify(S))}catch(e){}};save();
+if(!S.dent2){S.events.forEach(e=>{if(e.date==='2026-11-09'&&/dentista/i.test(e.title))e.done=true});S.dent2=true;save()}
 const now=new Date(),todayK=key(now.getFullYear(),now.getMonth(),now.getDate());
 let U={tab:'cal',y:now.getFullYear(),m:now.getMonth(),sel:null,toast:'',bk:''};
 let tt;const toast=(t,ms=4000)=>{U.toast=t;render();clearTimeout(tt);tt=setTimeout(()=>{U.toast='';render()},ms)};
@@ -108,8 +110,8 @@ const monthExp=(y,m)=>fixed(y,m).concat(S.exp.filter(e=>e.date.startsWith(`${y}-
 function cal(){const f=(new Date(U.y,U.m,1).getDay()+6)%7,n=new Date(U.y,U.m+1,0).getDate();
  let h=remBanner()+evBanner()+'<div class="wd">'+'LMXJVSD'.split('').map(d=>`<div>${d}</div>`).join('')+'</div><div class="grid">';
  for(let i=0;i<f;i++)h+='<div class="c e"></div>';
- for(let d=1;d<=n;d++){const k=key(U.y,U.m,d),s=S.shifts[k],p=S.partner[k],ev=S.events.some(e=>e.date===k)||!!remText(k);
-  h+=`<button class="c${k===todayK?' t':''}" data-a="day" data-v="${k}"><span class="n">${d}</span>${s&&SH[s]?`<span class="s${SH[s][0]?'':' L'}" style="color:${SH[s][2]}">${s}</span>${SH[s][0]?`<span class="h">${SH[s][0]}-${SH[s][1]}</span>`:`<span class="h" style="font-size:11px">${SH[s][3]}</span>`}`:''}${ev?'<i class="ev"></i>':''}</button>`}
+ for(let d=1;d<=n;d++){const k=key(U.y,U.m,d),s=S.shifts[k],p=S.partner[k],ev=S.events.some(e=>e.date===k)||!!remText(k),evp=S.events.some(e=>e.date===k&&!e.done)||(!!remText(k)&&!(S.remDone&&S.remDone[k]));
+  h+=`<button class="c${k===todayK?' t':''}" data-a="day" data-v="${k}"><span class="n">${d}</span>${s&&SH[s]?`<span class="s${SH[s][0]?'':' L'}" style="color:${SH[s][2]}">${s}</span>${SH[s][0]?`<span class="h">${SH[s][0]}-${SH[s][1]}</span>`:`<span class="h" style="font-size:11px">${SH[s][3]}</span>`}`:''}${ev?`<i class="ev${evp?'':' d'}"></i>`:''}</button>`}
  return h+'</div>'}
 
 function sheet(){const k=U.sel,[y,m,d]=k.split('-').map(Number),dt=new Date(y,m-1,d),cur=S.shifts[k];
@@ -117,8 +119,8 @@ function sheet(){const k=U.sel,[y,m,d]=k.split('-').map(Number),dt=new Date(y,m-
  let h=`<div class="bd" data-a="close"></div><div class="sh"><div class="grip"></div><h3>${lbl}</h3><div class="chips">`;
  for(const c in SH)h+=`<button class="chip${cur===c?' on':''}" style="border-color:${SH[c][2]}" data-a="shift" data-v="${c}"><b style="color:${SH[c][2]}">${SH[c][3]} ${c}</b><small>${SH[c][0]?SH[c][0]+'-'+SH[c][1]:'&nbsp;'}</small></button>`;
  h+=`</div><button class="btn g" data-a="shift" data-v="">Sin turno</button>${(S.events.some(e=>e.date===k)||remText(k))?'<h3>Agenda</h3>':''}`;
- S.events.filter(e=>e.date===k).sort((a,b)=>a.time<b.time?-1:1).forEach(e=>{h+=`<div class="row"><div><b>${esc(e.time||'--:--')}</b> ${esc(e.title)}</div><button class="x" data-a="delev" data-v="${e.id}">✕</button></div>`});
- if(remText(k))h+=`<div class="row"><div>🔔 ${esc(remText(k))}</div></div>`;h+='</div>';return h}
+ S.events.filter(e=>e.date===k).sort((a,b)=>a.time<b.time?-1:1).forEach(e=>{h+=agendaRow(e.id,e.done,esc(e.time||'--:--'),esc(e.title))});
+ if(remText(k))h+=agendaRow('rem',S.remDone&&S.remDone[k],'🔔',esc(remText(k)));h+='</div>';return h}
 
 const CC={Alquiler:'#6ea8ff',Sindicato:'#ff9800','Seguro de salud':'#2ee66b',Gasolina:'#ff5f6d',Otros:'#ba68c8'},CI={Alquiler:'🏠',Sindicato:'🤝','Seguro de salud':'🩺',Gasolina:'⛽',Otros:'🧾'};
 Object.assign(CC,{Agua:'#38bdf8',Basura:'#94a3b8',Luz:'#fcd34d'});Object.assign(CI,{Agua:'💧',Basura:'🗑️',Luz:'💡'});Object.assign(CC,{Recargas:'#2dd4bf',Bizum:'#f472b6','Teléfono':'#a3e635',Hogar:'#38bdf8','Seguro coche':'#818cf8'});Object.assign(CI,{Recargas:'💳',Bizum:'📲','Teléfono':'📱',Hogar:'💧','Seguro coche':'🚗'});
@@ -126,10 +128,16 @@ function histCard(){const mt=[...Array(12)].map((_,i)=>monthExp(U.y,i).reduce((a
  const rows=mt.map((v,i)=>v&&(U.y<now.getFullYear()||i<=now.getMonth())?`<div class="hb${i===U.m?' on':''}" data-a="gm" data-v="${i}"><span>${MN[i].slice(0,3)}</span><i style="width:${v/mx*52}%"></i><b>${eur(v)}</b></div>`:'').join('');
  return rows?`<div class="card"><h3>Histórico ${U.y}</h3>${rows}</div>`:''}
 function remDate(y,m){let d=new Date(y,m+1,0).getDate();while(new Date(y,m,d).getDay()!==5)d--;return d-7}
-function remText(k){const[y,m,d]=k.split('-').map(Number);if(y*12+m-1<2026*12+10||d!==remDate(y,m-1))return '';return 'Devengos: poner transporte de '+MN[(m+10)%12]+' y nocturnidad'}
-function remBanner(){const t=new Date();for(let i=0;i<2;i++){const dt=new Date(t.getFullYear(),t.getMonth()+i,1),y=dt.getFullYear(),m=dt.getMonth(),d=remDate(y,m),tx=remText(key(y,m,d));if(!tx)continue;const df=Math.round((new Date(y,m,d)-new Date(t.getFullYear(),t.getMonth(),t.getDate()))/864e5);if(df>=0&&df<=7)return `<div class="card" style="border-color:#38bdf8"><b>🔔 ${df?'Viernes '+d+(df===1?' (mañana)':' (en '+df+' días)'):'Hoy'}</b><br>${esc(tx)}</div>`}return ''}
-function evBanner(){const t=new Date(),t0=new Date(t.getFullYear(),t.getMonth(),t.getDate());return S.events.map(e=>{const[y,m,d]=e.date.split('-').map(Number);return{e,df:Math.round((new Date(y,m-1,d)-t0)/864e5)}}).filter(x=>x.df>=0&&x.df<=3).sort((a,b)=>a.df-b.df||String(a.e.time).localeCompare(String(b.e.time))).map(x=>`<div class="card" style="border-color:#38bdf8"><b>🔔 ${x.df===0?'Hoy':x.df===1?'Mañana':'En '+x.df+' días'}${x.e.time?' a las '+x.e.time:''}</b><br>${esc(x.e.title)}</div>`).join('')}
-function vsheet(){return `<div class="bd" data-a="vclose"></div><div class="sh"><div class="grip"></div><h3>Dictar o escribir</h3><small style="color:var(--mu)">Pulsa el micrófono de tu teclado y di, por ejemplo: “Gasolina 40 euros hoy” o “Turno M mañana”.</small><input id="vt" placeholder="Escribe o dicta…" style="margin-top:10px"><button class="btn" data-a="vsend">Enviar</button></div>`}
+const REM0='Devengos: poner transporte y nocturnidad de {mes}';
+function remText(k){const[y,m,d]=k.split('-').map(Number);if(y*12+m-1<2026*12+10||d!==remDate(y,m-1))return '';return (S.remOv&&S.remOv[k])||(S.remTpl||REM0).split('{mes}').join(MN[(m+10)%12])}
+function remCard(){return `<div class="card"><h3>Recordatorio de devengos</h3><small style="color:var(--mu)">Sale el viernes anterior al último viernes de cada mes. {mes} se cambia por el mes anterior. Para cambiar solo uno, tócalo en el calendario y pulsa ✎.</small><input data-a="rt" value="${esc(S.remTpl||REM0)}" style="margin-top:10px"></div>`}
+function agendaRow(id,done,pre,txt){
+ if(U.ed===id){const ev=id==='rem'?null:S.events.find(e=>e.id===id);return `<div class="row" style="flex-wrap:wrap"><div style="width:100%">${ev?`<input id="ed-t" type="time" value="${ev.time||''}">`:''}<input id="ed-x" value="${esc(id==='rem'?remText(U.sel):ev?ev.title:'')}"></div><button class="btn" style="flex:1" data-a="edsave" data-v="${id}">Guardar</button><button class="btn g" style="flex:1" data-a="edcancel">Cancelar</button></div>`}
+ return `<div class="row"><button class="x" style="background:${done?'#14532d':'#232b40'};color:${done?'#4ade80':'var(--mu)'}" data-a="done" data-v="${id}">✓</button><div style="flex:1;min-width:0;${done?'text-decoration:line-through;opacity:.55':''}">${pre?'<b>'+pre+'</b> ':''}${txt}</div><button class="x" style="background:#232b40;color:var(--tx)" data-a="edit" data-v="${id}">✎</button>${id==='rem'?'':`<button class="x" data-a="delev" data-v="${id}">✕</button>`}</div>`}
+function remBanner(){const t=new Date();for(let i=0;i<2;i++){const dt=new Date(t.getFullYear(),t.getMonth()+i,1),y=dt.getFullYear(),m=dt.getMonth(),d=remDate(y,m),tx=remText(key(y,m,d));if(!tx||(S.remDone&&S.remDone[key(y,m,d)]))continue;const df=Math.round((new Date(y,m,d)-new Date(t.getFullYear(),t.getMonth(),t.getDate()))/864e5);if(df>=0&&df<=7)return `<div class="card" style="border-color:#38bdf8"><b>🔔 ${df?'Viernes '+d+(df===1?' (mañana)':' (en '+df+' días)'):'Hoy'}</b><br>${esc(tx)}</div>`}return ''}
+function evBanner(){const t=new Date(),t0=new Date(t.getFullYear(),t.getMonth(),t.getDate());return S.events.map(e=>{const[y,m,d]=e.date.split('-').map(Number);return{e,df:Math.round((new Date(y,m-1,d)-t0)/864e5)}}).filter(x=>x.df>=0&&x.df<=3&&!x.e.done).sort((a,b)=>a.df-b.df||String(a.e.time).localeCompare(String(b.e.time))).map(x=>`<div class="card" style="border-color:#38bdf8"><b>🔔 ${x.df===0?'Hoy':x.df===1?'Mañana':'En '+x.df+' días'}${x.e.time?' a las '+x.e.time:''}</b><br>${esc(x.e.title)}</div>`).join('')}
+function vmsg(){const v=U.vs;if(!v||v===1)return '';const t=v==='nosr'?'Este navegador no incluye reconocimiento de voz.':v==='perm'?'No hay permiso de micrófono para esta página. En Chrome: ⋮ → Configuración → Configuración del sitio → Micrófono, y permite esta dirección.':v==='err:no-speech'?'No te he oído. Pulsa el micrófono y habla otra vez.':v==='err:network'?'El dictado necesita conexión a internet.':(v==='err:not-allowed'||v==='err:service-not-allowed')?'Chrome no deja usar el reconocimiento de voz aquí ('+v.slice(4)+'). Prueba abriendo la web en una pestaña de Chrome, o usa el micrófono del teclado.':'No se pudo dictar ('+v+'). Usa el micrófono del teclado.';return `<p style="color:#fca5a5;font-size:13px;margin:6px 0">${t}</p>`}
+function vsheet(){return `<div class="bd" data-a="vclose"></div><div class="sh"><div class="grip"></div><h3>Dictar o escribir</h3>${vmsg()}<small style="color:var(--mu)">Pulsa el micrófono de tu teclado y di, por ejemplo: “Gasolina 40 euros hoy” o “Turno M mañana”.</small><input id="vt" placeholder="Escribe o dicta…" style="margin-top:10px"><button class="btn" data-a="vsend">Enviar</button></div>`}
 function donut(by,tot){const C=2*Math.PI*46;let acc=0,s='';for(const c in by){const len=tot?by[c]/tot*C:0;s+=`<circle cx="60" cy="60" r="46" fill="none" stroke="${CC[c]||'#888'}" stroke-width="16" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-acc}" transform="rotate(-90 60 60)"/>`;acc+=len}
  return `<svg viewBox="0 0 120 120" width="165" height="165"><circle cx="60" cy="60" r="46" fill="none" stroke="#232b40" stroke-width="16"/>${s}<text x="60" y="56" text-anchor="middle" fill="#8a93a8" font-size="8">Total</text><text x="60" y="71" text-anchor="middle" fill="#eef1f8" font-size="13" font-weight="800">${Math.round(tot)} €</text></svg>`}
 function xsheet(){const c=U.xs;return `<div class="bd" data-a="xclose"></div><div class="sh"><div class="grip"></div><h3>Nuevo gasto</h3><div class="two"><input id="ga" type="number" inputmode="decimal" step="0.01" placeholder="Importe €"><input id="gd" type="date" value="${todayK}"></div><select id="gc">${['Luz','Agua','Basura','Gasolina','Teléfono','Seguro coche','Otros'].map(o=>`<option${c===o?' selected':''}>${o}</option>`).join('')}</select><input id="gn" placeholder="Nota"><button class="btn" data-a="addexp">Guardar gasto</button></div>`}
@@ -147,7 +155,7 @@ function gasOld(){const l=monthExp(U.y,U.m);
  return h+'</div>'}
 
 function localCard(){return `<div class="card"><h3>Tus datos, solo en este móvil</h3><small style="color:var(--mu)">Todo se guarda en el almacenamiento de este navegador, sin nube. ${PERSIST?'Almacenamiento protegido ✓':'Haz una copia de vez en cuando.'}</small><button class="btn" style="margin-top:10px" data-a="dl">Descargar copia (.json)</button><label class="btn g" style="display:flex;align-items:center;justify-content:center">Importar desde archivo<input type="file" accept=".json,application/json" data-a="rf" style="display:none"></label></div>`}
-function aj(){const o=ajOld();return localCard()+recCard()+o.slice(o.indexOf('<div class="card"><h3>Copia'))}
+function aj(){const o=ajOld();return localCard()+remCard()+recCard()+o.slice(o.indexOf('<div class="card"><h3>Copia'))}
 function ajOld(){const mo=v=>MN.map((n,i)=>`<option value="${i}"${i===v?' selected':''}>${cap(n)}</option>`).join('');
  return `<div class="card"><h3>Ciclo de pagos fijos</h3><small style="color:var(--mu)">Mes en que se paga (cada 2 y 3 meses a partir de ahí)</small><p style="margin:10px 0 4px">Sindicato · 32,55 €</p><select data-a="cu">${mo(S.set.u)}</select><p style="margin:6px 0 4px">Seguro de salud · 198,00 €</p><select data-a="cs">${mo(S.set.s)}</select><small style="color:var(--mu)">Alquiler: 623,00 € todos los meses.</small></div>
  <div class="card"><h3>Copia de seguridad</h3><button class="btn" data-a="exp">Exportar (copiar JSON)</button><textarea id="bk" placeholder="Aquí aparece la copia o pega una para importar">${esc(U.bk)}</textarea><button class="btn g" data-a="imp">Importar desde el cuadro</button><button class="btn g" style="color:#ff7a90" data-a="reset">Borrar todo</button></div>`}
@@ -174,7 +182,15 @@ function handle(raw){const t=raw.toLowerCase().replace(/,/g,'.'),k=parseDate(t);
  const a=t.match(/(\d+(?:\.\d{1,2})?)\s*(?:€|euros?)/)||(/gasolina/.test(t)&&t.match(/(\d+(?:\.\d{1,2})?)/));
  if(a){const g=/gasolina|repost/.test(t);S.exp.push({id:Date.now()+'',date:k,amount:parseFloat(a[1]),cat:g?'Gasolina':'Otros',note:g?'':t.replace(a[0],'').replace(/\b(hoy|ma[ñn]ana)\b/,'').trim()});save();return toast(`${g?'Gasolina':'Gasto'} ${eur(parseFloat(a[1]))} ✓`+hit)}
  toast('No lo he entendido.'+hit+'<br><small>Prueba: “Gasolina 40 euros hoy”, “Turno M mañana”, “Cita dentista el día 18 a las 11”.</small>',7000)}
-function mic(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+async function mic(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){U.vs='nosr';render();return}
+ try{if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){const st=await navigator.mediaDevices.getUserMedia({audio:true});st.getTracks().forEach(t=>t.stop())}}catch(e){U.vs='perm';render();return}
+ try{const r=new SR();r.lang='es-ES';r.interimResults=false;r.maxAlternatives=1;toast('🎙 Escuchando… habla ahora',9000);
+  r.onresult=e=>{clearTimeout(tt);U.toast='';handle(e.results[0][0].transcript)};
+  r.onerror=e=>{clearTimeout(tt);U.toast='';U.vs='err:'+e.error;render()};
+  r.onend=()=>{if(U.toast&&U.toast.indexOf('Escuchando')>=0){clearTimeout(tt);U.toast='';render()}};
+  r.start()}catch(e){U.vs='err:start';render()}}
+function micOld(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!SR){U.vs=1;render();return}
  try{const r=new SR();r.lang='es-ES';r.interimResults=false;toast('🎙 Escuchando…',9000);
   r.onresult=e=>handle(e.results[0][0].transcript);
@@ -183,16 +199,20 @@ function mic(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition
 
 // ---- eventos ----
 const val=id=>document.getElementById(id).value;
-document.addEventListener('change',e=>{const a=e.target.dataset.a;if(a==='rf'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o.shifts||!o.exp)throw 0;S=Object.assign({shifts:{},partner:{},events:[],exp:[],set:{u:0,s:0}},o);save();toast('Copia importada ✓')}catch(x){toast('Archivo no válido')}};r.readAsText(f);return}if(a==='ra'){rec()[+e.target.dataset.i].a=parseFloat(e.target.value)||0;save();return}if(a==='rs'){rec()[+e.target.dataset.i].s=+e.target.value;save();return}if(a==='cu'){S.set.u=+e.target.value;save();render()}if(a==='cs'){S.set.s=+e.target.value;save();render()}});
+document.addEventListener('change',e=>{const a=e.target.dataset.a;if(a==='rf'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o.shifts||!o.exp)throw 0;S=Object.assign({shifts:{},partner:{},events:[],exp:[],set:{u:0,s:0}},o);save();toast('Copia importada ✓')}catch(x){toast('Archivo no válido')}};r.readAsText(f);return}if(a==='rt'){S.remTpl=e.target.value.trim()||REM0;save();return}if(a==='ra'){rec()[+e.target.dataset.i].a=parseFloat(e.target.value)||0;save();return}if(a==='rs'){rec()[+e.target.dataset.i].s=+e.target.value;save();return}if(a==='cu'){S.set.u=+e.target.value;save();render()}if(a==='cs'){S.set.s=+e.target.value;save();render()}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.tagName==='SELECT'||b.tagName==='INPUT')return;const a=b.dataset.a,v=b.dataset.v;
  if(a==='prev'||a==='next'){U.m+=a==='next'?1:-1;if(U.m<0){U.m=11;U.y--}if(U.m>11){U.m=0;U.y++}}
  else if(a==='tab')U.tab=v;
- else if(a==='day')U.sel=v;
- else if(a==='close')U.sel=null;
+ else if(a==='day'){U.sel=v;U.ed=0}
+ else if(a==='close'){U.sel=null;U.ed=0}
  else if(a==='shift'){v?S.shifts[U.sel]=v:delete S.shifts[U.sel];save()}
  else if(a==='partner'){S.partner[U.sel]?delete S.partner[U.sel]:S.partner[U.sel]=true;save()}
  else if(a==='addev'){const n=val('en').trim();if(!n)return;S.events.push({id:Date.now()+'',date:U.sel,time:val('et'),title:n});save()}
  else if(a==='delev'){S.events=S.events.filter(x=>x.id!==v);save()}
+ else if(a==='done'){if(v==='rem'){S.remDone=S.remDone||{};if(S.remDone[U.sel])delete S.remDone[U.sel];else S.remDone[U.sel]=true}else{const e=S.events.find(x=>x.id===v);if(e)e.done=!e.done}save()}
+ else if(a==='edit')U.ed=v;
+ else if(a==='edcancel')U.ed=0;
+ else if(a==='edsave'){if(v==='rem'){const t=val('ed-x').trim();S.remOv=S.remOv||{};if(t)S.remOv[U.sel]=t;else delete S.remOv[U.sel]}else{const e=S.events.find(x=>x.id===v);if(e){e.title=val('ed-x').trim()||e.title;e.time=val('ed-t')||''}}U.ed=0;save()}
  else if(a==='addexp'){const n=parseFloat(val('ga').replace(',','.'));if(!(n>0))return;S.exp.push({id:Date.now()+'',date:val('gd')||todayK,amount:n,cat:val('gc'),note:val('gn').trim()});save();U.xs=0}
  else if(a==='delexp'){S.exp=S.exp.filter(x=>x.id!==v);save()}
  else if(a==='vclose')U.vs=0;
