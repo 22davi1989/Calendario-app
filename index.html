@@ -131,6 +131,11 @@ function histCard(){const mt=[...Array(12)].map((_,i)=>monthExp(U.y,i).reduce((a
 function remDate(y,m){let d=new Date(y,m+1,0).getDate();while(new Date(y,m,d).getDay()!==5)d--;return d-7}
 const REM0='Devengos: poner transporte y nocturnidad de {mes}';
 function remText(k){const[y,m,d]=k.split('-').map(Number);if(y*12+m-1<2026*12+10||d!==remDate(y,m-1)||(S.remDel&&S.remDel[k]))return '';return (S.remOv&&S.remOv[k])||(S.remTpl||REM0).split('{mes}').join(MN[(m+10)%12])}
+function impTurnos(txt){const map={vac:'Vacaciones'},ok=[],bad=[];for(const c in SH)map[norm(c).toLowerCase()]=c;
+ txt.split(/[\n;]+/).forEach(l=>{l=l.trim();if(!l)return;const m=l.match(/^(\d{4}-\d{1,2}-\d{1,2}|\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?)\s*[:=,\s]\s*(.+)$/);if(!m)return bad.push(l);const p=m[1].split(/[\/.-]/).map(Number);let y,mo,d;if(/^\d{4}-/.test(m[1])){[y,mo,d]=p}else{d=p[0];mo=p[1];y=p[2]?(p[2]<100?2000+p[2]:p[2]):new Date().getFullYear()}
+  const dt=new Date(y,mo-1,d);if(dt.getMonth()!==mo-1)return bad.push(l);const v=norm(m[2].trim().toLowerCase()).replace(/\s+/g,''),c=map[v]||(/^(-|borrar|nada|quitar)$/.test(v)?'':null);if(c===null)return bad.push(l);const k=key(y,mo-1,d);if(c)S.shifts[k]=c;else delete S.shifts[k];ok.push(k)});
+ save();return{n:ok.length,bad}}
+function turnosCard(){return `<div class="card"><h3>Importar turnos</h3><small style="color:var(--mu)">Mándame en el chat la foto o captura de tus turnos y te devolveré un texto para pegar aquí. Una línea por día, por ejemplo: 2026-12-01 M</small><textarea id="ti" placeholder="2026-12-01 M&#10;2026-12-02 R1&#10;2026-12-03 Libre" style="margin-top:10px"></textarea><button class="btn" data-a="timp">Añadir al calendario</button></div>`}
 function remCard(){return `<div class="card"><h3>Recordatorio de devengos</h3><small style="color:var(--mu)">Sale el viernes anterior al último viernes de cada mes. {mes} se cambia por el mes anterior. Para cambiar solo uno, tócalo en el calendario y pulsa ✎.</small><input data-a="rt" value="${esc(S.remTpl||REM0)}" style="margin-top:10px">${S.remDel&&Object.keys(S.remDel).length?'<button class="btn g" style="margin-top:8px" data-a="remrestore">Restaurar recordatorios eliminados</button>':''}</div>`}
 function agendaRow(id,done,pre,txt){
  if(U.ed===id){const ev=id==='rem'?null:S.events.find(e=>e.id===id);return `<div class="row" style="flex-wrap:wrap"><div style="width:100%">${ev?`<input id="ed-t" type="time" value="${ev.time||''}">`:''}<input id="ed-x" value="${esc(id==='rem'?remText(U.sel):ev?ev.title:'')}"></div><button class="btn" style="flex:1" data-a="edsave" data-v="${id}">Guardar</button><button class="btn g" style="flex:1" data-a="edcancel">Cancelar</button></div>`}
@@ -157,7 +162,7 @@ function gasOld(){const l=monthExp(U.y,U.m);
  return h+'</div>'}
 
 function localCard(){return `<div class="card"><h3>Tus datos, solo en este móvil</h3><small style="color:var(--mu)">Todo se guarda en el almacenamiento de este navegador, sin nube. ${PERSIST?'Almacenamiento protegido ✓':'Haz una copia de vez en cuando.'}</small><button class="btn" style="margin-top:10px" data-a="dl">Descargar copia (.json)</button><label class="btn g" style="display:flex;align-items:center;justify-content:center">Importar desde archivo<input type="file" accept=".json,application/json" data-a="rf" style="display:none"></label></div>`}
-function aj(){const o=ajOld();return localCard()+remCard()+recCard()+o.slice(o.indexOf('<div class="card"><h3>Copia'))}
+function aj(){const o=ajOld();return localCard()+turnosCard()+remCard()+recCard()+o.slice(o.indexOf('<div class="card"><h3>Copia'))}
 function ajOld(){const mo=v=>MN.map((n,i)=>`<option value="${i}"${i===v?' selected':''}>${cap(n)}</option>`).join('');
  return `<div class="card"><h3>Ciclo de pagos fijos</h3><small style="color:var(--mu)">Mes en que se paga (cada 2 y 3 meses a partir de ahí)</small><p style="margin:10px 0 4px">Sindicato · 32,55 €</p><select data-a="cu">${mo(S.set.u)}</select><p style="margin:6px 0 4px">Seguro de salud · 198,00 €</p><select data-a="cs">${mo(S.set.s)}</select><small style="color:var(--mu)">Alquiler: 623,00 € todos los meses.</small></div>
  <div class="card"><h3>Copia de seguridad</h3><button class="btn" data-a="exp">Exportar (copiar JSON)</button><textarea id="bk" placeholder="Aquí aparece la copia o pega una para importar">${esc(U.bk)}</textarea><button class="btn g" data-a="imp">Importar desde el cuadro</button><button class="btn g" style="color:#ff7a90" data-a="reset">Borrar todo</button></div>`}
@@ -251,7 +256,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
  else if(a==='tab')U.tab=v;
  else if(a==='day'){U.sel=v;U.ed=0}
  else if(a==='close'){U.sel=null;U.ed=0}
- else if(a==='shift'){v?S.shifts[U.sel]=v:delete S.shifts[U.sel];save()}
+ else if(a==='shift'){v?S.shifts[U.sel]=v:delete S.shifts[U.sel];save();U.sel=null;U.ed=0}
  else if(a==='partner'){S.partner[U.sel]?delete S.partner[U.sel]:S.partner[U.sel]=true;save()}
  else if(a==='addev'){const n=val('en').trim();if(!n)return;S.events.push({id:Date.now()+'',date:U.sel,time:val('et'),title:n});save()}
  else if(a==='delev'){S.events=S.events.filter(x=>x.id!==v);save()}
@@ -266,6 +271,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
  else if(a==='delexp'){S.exp=S.exp.filter(x=>x.id!==v);save()}
  else if(a==='vclose')U.vs=0;
  else if(a==='vsend'){const t=val('vt').trim();U.vs=0;if(t){render();return handle(t)}}
+ else if(a==='timp'){const r=impTurnos(val('ti'));toast(r.n+' días añadidos al calendario ✓'+(r.bad.length?'<br><small>No entendí '+r.bad.length+' línea(s): '+esc(r.bad.slice(0,2).join(' | '))+'</small>':''),7000);return}
  else if(a==='gm')U.m=+v;
  else if(a==='xopen')U.xs=v||'Gasolina';
  else if(a==='xclose')U.xs=0;
