@@ -94,6 +94,7 @@ try{const r=localStorage.getItem('turnos_v1');if(r)S=Object.assign(S,JSON.parse(
 const save=()=>{try{localStorage.setItem('turnos_v1',JSON.stringify(S))}catch(e){}};save();
 if(!S.dent2){S.events.forEach(e=>{if(e.date==='2026-11-09'&&/dentista/i.test(e.title))e.done=true});S.dent2=true;save()}
 if(!S.fix1){const bad=/^(crea|crear|a[ñn]ade|a[ñn]adir|elimina|eliminar|borra|borrar|quita|quitar)\b/i,rm=S.events.filter(e=>bad.test(e.title));if(rm.length){S.events=S.events.filter(e=>!bad.test(e.title));if(rm.some(e=>/dentista/i.test(e.title))&&!S.events.some(e=>e.date==='2026-11-16'&&/dentista/i.test(e.title)))S.events.push({id:'fix16',date:'2026-11-16',time:'',title:'Dentista'})}S.fix1=true;save()}
+if(!S.pr2){S.partner=S.partner||{};if(!Object.keys(S.partner).length){const pr=(m,a,b)=>{for(let d=a;d<=b;d++)S.partner[key(2026,m,d)]=true};pr(9,26,31);pr(10,1,8);pr(10,10,11);pr(10,17,17);pr(10,22,22);pr(10,28,29);pr(11,5,6)}S.pr2=true;save()}
 const now=new Date(),todayK=key(now.getFullYear(),now.getMonth(),now.getDate());
 let U={tab:'cal',y:now.getFullYear(),m:now.getMonth(),sel:null,toast:'',bk:''};
 let tt;const toast=(t,ms=4000)=>{U.toast=t;render();clearTimeout(tt);tt=setTimeout(()=>{U.toast='';render()},ms)};
@@ -112,14 +113,14 @@ function cal(){const f=(new Date(U.y,U.m,1).getDay()+6)%7,n=new Date(U.y,U.m+1,0
  let h=remBanner()+evBanner()+'<div class="wd">'+'LMXJVSD'.split('').map(d=>`<div>${d}</div>`).join('')+'</div><div class="grid">';
  for(let i=0;i<f;i++)h+='<div class="c e"></div>';
  for(let d=1;d<=n;d++){const k=key(U.y,U.m,d),s=S.shifts[k],p=S.partner[k],ev=S.events.some(e=>e.date===k)||!!remText(k),evp=S.events.some(e=>e.date===k&&!e.done)||(!!remText(k)&&!(S.remDone&&S.remDone[k]));
-  h+=`<button class="c${k===todayK?' t':''}" data-a="day" data-v="${k}"><span class="n">${d}</span>${s&&SH[s]?`<span class="s${SH[s][0]?'':' L'}" style="color:${SH[s][2]}">${s}</span>${SH[s][0]?`<span class="h">${SH[s][0]}-${SH[s][1]}</span>`:`<span class="h" style="font-size:11px">${SH[s][3]}</span>`}`:''}${ev?`<i class="ev${evp?'':' d'}"></i>`:''}</button>`}
+  h+=`<button class="c${p?' p':''}${k===todayK?' t':''}" data-a="day" data-v="${k}"><span class="n">${d}</span>${s&&SH[s]?`<span class="s${SH[s][0]?'':' L'}" style="color:${SH[s][2]}">${s}</span>${SH[s][0]?`<span class="h">${SH[s][0]}-${SH[s][1]}</span>`:`<span class="h" style="font-size:11px">${SH[s][3]}</span>`}`:''}${ev?`<i class="ev${evp?'':' d'}"></i>`:''}${p?'<i class="hr">❤</i>':''}</button>`}
  return h+'</div>'}
 
 function sheet(){const k=U.sel,[y,m,d]=k.split('-').map(Number),dt=new Date(y,m-1,d),cur=S.shifts[k];
  const lbl=cap(dt.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}));
  let h=`<div class="bd" data-a="close"></div><div class="sh"><div class="grip"></div><h3>${lbl}</h3><div class="chips">`;
  for(const c in SH)h+=`<button class="chip${cur===c?' on':''}" style="border-color:${SH[c][2]}" data-a="shift" data-v="${c}"><b style="color:${SH[c][2]}">${SH[c][3]} ${c}</b><small>${SH[c][0]?SH[c][0]+'-'+SH[c][1]:'&nbsp;'}</small></button>`;
- h+=`</div><button class="btn g" data-a="shift" data-v="">Sin turno</button>${(S.events.some(e=>e.date===k)||remText(k))?'<h3>Agenda</h3>':''}`;
+ h+=`</div><div class="two"><button class="btn g" data-a="shift" data-v="">Sin turno</button><button class="btn" style="background:${S.partner[k]?'#facc15':'#232b40'};color:${S.partner[k]?'#1a1400':'#fff'}" data-a="partner">${S.partner[k]?'✓ Rayco libre':'Rayco libre'}</button></div>${(S.events.some(e=>e.date===k)||remText(k))?'<h3>Agenda</h3>':''}`;
  S.events.filter(e=>e.date===k).sort((a,b)=>a.time<b.time?-1:1).forEach(e=>{h+=agendaRow(e.id,e.done,esc(e.time||'--:--'),esc(e.title))});
  if(remText(k))h+=agendaRow('rem',S.remDone&&S.remDone[k],'🔔',esc(remText(k)));h+=`<h3 style="margin-top:14px">Nueva cita</h3><div class="two"><input id="et" type="time"><input id="en" placeholder="Ej.: Dentista"></div><button class="btn" data-a="addev">Añadir cita</button></div>`;return h}
 
@@ -224,9 +225,9 @@ function handle(raw){if(cmdAgenda(raw))return;handleOld(raw)}
 function handleOld(raw){const t=raw.toLowerCase().replace(/,/g,'.'),k=parseDate(t);let m;
  const hit=`<br><small style="color:var(--mu)">“${esc(raw)}”</small>`;
  if(m=t.match(/turno\s+(m|r|t)\s*([1-4])?\b/)){const c=(m[1]+(m[2]||'')).toUpperCase();if(SH[c]){S.shifts[k]=c;save();return toast(`Turno ${c} el ${k.split('-').reverse().join('/')} ✓`+hit)}}
- if(/pareja/.test(t)&&/libre/.test(t)){S.partner[k]=true;save();return toast('Pareja libre el '+k.split('-').reverse().join('/')+' ✓'+hit)}
+ if(/pareja|rayco/.test(t)&&/libre/.test(t)){S.partner[k]=true;save();return toast('Rayco libre el '+k.split('-').reverse().join('/')+' ✓'+hit)}
  if(/vacaci/.test(t)){S.shifts[k]='Vacaciones';save();return toast('Vacaciones el '+k.split('-').reverse().join('/')+' ✓'+hit)}
- if(/\blibre\b/.test(t)&&!/pareja/.test(t)){S.shifts[k]='Libre';save();return toast('Libre el '+k.split('-').reverse().join('/')+' ✓'+hit)}
+ if(/\blibre\b/.test(t)&&!/pareja|rayco/.test(t)){S.shifts[k]='Libre';save();return toast('Libre el '+k.split('-').reverse().join('/')+' ✓'+hit)}
  if(/\b(cita|reuni[oó]n|evento|m[eé]dico|dentista)\b/.test(t)){const tm=t.match(/a las\s+(\d{1,2})(?:[:.](\d{2}))?/);
   let title=t.replace(/a las\s+\d{1,2}([:.]\d{2})?/,'').replace(/\b(el )?d[ií]a \d{1,2}( de [a-zé]+)?/,'').replace(/\b(hoy|pasado ma[ñn]ana|ma[ñn]ana)\b/g,'').replace(/\s+/g,' ').trim();
   S.events.push({id:Date.now()+'',date:k,time:tm?pad(+tm[1])+':'+(tm[2]||'00'):'',title:cap(title||'Cita')});save();return toast('Cita añadida ✓'+hit)}
@@ -257,7 +258,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
  else if(a==='day'){U.sel=v;U.ed=0}
  else if(a==='close'){U.sel=null;U.ed=0}
  else if(a==='shift'){v?S.shifts[U.sel]=v:delete S.shifts[U.sel];save();U.sel=null;U.ed=0}
- else if(a==='partner'){S.partner[U.sel]?delete S.partner[U.sel]:S.partner[U.sel]=true;save()}
+ else if(a==='partner'){S.partner[U.sel]?delete S.partner[U.sel]:S.partner[U.sel]=true;save();U.sel=null;U.ed=0}
  else if(a==='addev'){const n=val('en').trim();if(!n)return;S.events.push({id:Date.now()+'',date:U.sel,time:val('et'),title:n});save()}
  else if(a==='delev'){S.events=S.events.filter(x=>x.id!==v);save()}
  else if(a==='done'){if(v==='rem'){S.remDone=S.remDone||{};if(S.remDone[U.sel])delete S.remDone[U.sel];else S.remDone[U.sel]=true}else{const e=S.events.find(x=>x.id===v);if(e)e.done=!e.done}save()}
