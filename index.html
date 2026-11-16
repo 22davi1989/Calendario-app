@@ -251,6 +251,9 @@ function micOld(){const SR=window.SpeechRecognition||window.webkitSpeechRecognit
 
 // ---- eventos ----
 const val=id=>document.getElementById(id).value;
+let tx0=0,ty0=0,tOk=false;
+document.addEventListener('touchstart',e=>{const t=e.touches[0];tx0=t.clientX;ty0=t.clientY;tOk=!U.sel&&!U.xs&&!U.vs&&U.tab!=='aj'&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName||'')},{passive:true});
+document.addEventListener('touchend',e=>{if(!tOk)return;const t=e.changedTouches[0],dx=t.clientX-tx0,dy=t.clientY-ty0;if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;U.m+=dx<0?1:-1;if(U.m<0){U.m=11;U.y--}if(U.m>11){U.m=0;U.y++}render()},{passive:true});
 document.addEventListener('change',e=>{const a=e.target.dataset.a;if(a==='rf'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o.shifts||!o.exp)throw 0;S=Object.assign({shifts:{},partner:{},events:[],exp:[],set:{u:0,s:0}},o);save();toast('Copia importada ✓')}catch(x){toast('Archivo no válido')}};r.readAsText(f);return}if(a==='rt'){S.remTpl=e.target.value.trim()||REM0;save();return}if(a==='ra'){rec()[+e.target.dataset.i].a=parseFloat(e.target.value)||0;save();return}if(a==='rs'){rec()[+e.target.dataset.i].s=+e.target.value;save();return}if(a==='cu'){S.set.u=+e.target.value;save();render()}if(a==='cs'){S.set.s=+e.target.value;save();render()}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.tagName==='SELECT'||b.tagName==='INPUT')return;const a=b.dataset.a,v=b.dataset.v;
  if(a==='prev'||a==='next'){U.m+=a==='next'?1:-1;if(U.m<0){U.m=11;U.y--}if(U.m>11){U.m=0;U.y++}}
