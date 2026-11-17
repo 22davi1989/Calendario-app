@@ -33,6 +33,7 @@ main{flex:1;overflow-y:auto;padding:6px 0 160px}
 .c .s.L{font-size:8.5px;letter-spacing:-.4px}
 .c .hr{position:absolute;bottom:2px;font-size:9px;font-style:normal}
 .c.p{border:2px solid #facc15;box-shadow:inset 0 0 10px #facc1555}
+.c.rv{border:2px solid #2dd4bf;box-shadow:inset 0 0 10px #2dd4bf55}
 .c .ev{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:#38bdf8}
 .c .ev.d{background:#4b5675}
 .leg{padding:10px 12px;color:var(--mu);font-size:12px;display:flex;gap:14px;flex-wrap:wrap}
@@ -82,7 +83,7 @@ textarea{min-height:110px;font:12px monospace}
 </style></head><body>
 <div id="app"></div>
 <script>
-const VER='17/11 01:18';let PERSIST=null;
+const VER='17/11 19:43';let PERSIST=null;
 try{if(navigator.storage&&navigator.storage.persist){navigator.storage.persisted().then(v=>{PERSIST=v;if(!v)return navigator.storage.persist().then(r=>{PERSIST=r})}).catch(()=>{})}}catch(e){}
 if('serviceWorker' in navigator){const had=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__rl){window.__rl=1;location.reload()}});window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').then(r=>r.update()).catch(()=>{}))}
 const SH={M:['07:00','15:00','#ff9800','🥱'],M1:['08:00','16:00','#aed581','😮‍💨'],M2:['08:30','16:30','#26c6da','😩'],R:['09:00','17:00','#ff5f6d','🏵️'],R1:['10:00','18:00','#ba68c8','💮'],R2:['12:00','20:00','#2ee66b','🌺'],R3:['11:00','19:00','#ff6ee0','🌼'],R4:['14:00','22:00','#6f9bff','🌃'],T:['15:00','23:00','#b39b94','🌌'],Libre:['','','#ff8a65','🎊'],Vacaciones:['','','#9575cd','🏖️']};
@@ -96,6 +97,8 @@ const save=()=>{try{localStorage.setItem('turnos_v1',JSON.stringify(S))}catch(e)
 if(!S.dent2){S.events.forEach(e=>{if(e.date==='2026-11-09'&&/dentista/i.test(e.title))e.done=true});S.dent2=true;save()}
 if(!S.fix1){const bad=/^(crea|crear|a[ñn]ade|a[ñn]adir|elimina|eliminar|borra|borrar|quita|quitar)\b/i,rm=S.events.filter(e=>bad.test(e.title));if(rm.length){S.events=S.events.filter(e=>!bad.test(e.title));if(rm.some(e=>/dentista/i.test(e.title))&&!S.events.some(e=>e.date==='2026-11-16'&&/dentista/i.test(e.title)))S.events.push({id:'fix16',date:'2026-11-16',time:'',title:'Dentista'})}S.fix1=true;save()}
 if(!S.pr2){S.partner=S.partner||{};if(!Object.keys(S.partner).length){const pr=(m,a,b)=>{for(let d=a;d<=b;d++)S.partner[key(2026,m,d)]=true};pr(9,26,31);pr(10,1,8);pr(10,10,11);pr(10,17,17);pr(10,22,22);pr(10,28,29);pr(11,5,6)}S.pr2=true;save()}
+if(!S.pr3){S.partner=S.partner||{};S.rvac=S.rvac||{};for(let d=1;d<=8;d++){const k=key(2026,10,d);delete S.partner[k];S.rvac[k]=true}const off=[0,1,7,12,18,19,25,26],ini=new Date(2026,11,7),fin=new Date(2027,11,31);for(let n=0;n<15;n++)for(const o of off){const dt=new Date(2026,10,10+28*n+o);if(dt>=ini&&dt<=fin){const k=key(dt.getFullYear(),dt.getMonth(),dt.getDate());if(!S.rvac[k])S.partner[k]=true}}S.pr3=true;save()}
+if(!S.pr4){S.partner=S.partner||{};S.rvac=S.rvac||{};Object.keys(S.partner).forEach(k=>{if(k>='2026-12-07')delete S.partner[k]});const W=[[5,6],[5,6],[5,6],[4,5],[3,4],[3,4],[3,4],[2,3],[1,2],[1,2],[1,2],[1,6]],base=Date.UTC(2026,10,23);for(let dt=new Date(2026,11,7);dt<=new Date(2027,11,31);dt.setDate(dt.getDate()+1)){const du=Date.UTC(dt.getFullYear(),dt.getMonth(),dt.getDate()),w=((Math.floor((du-base)/6048e5)%12)+12)%12,wd=(dt.getDay()+6)%7;if(W[w].includes(wd)){const k=key(dt.getFullYear(),dt.getMonth(),dt.getDate());if(!S.rvac[k])S.partner[k]=true}}S.pr4=true;save()}
 const now=new Date(),todayK=key(now.getFullYear(),now.getMonth(),now.getDate());
 let U={tab:'cal',y:now.getFullYear(),m:now.getMonth(),sel:null,toast:'',bk:''};
 let tt;const toast=(t,ms=4000)=>{U.toast=t;render();clearTimeout(tt);tt=setTimeout(()=>{U.toast='';render()},ms)};
@@ -113,15 +116,15 @@ const monthExp=(y,m)=>fixed(y,m).concat(S.exp.filter(e=>e.date.startsWith(`${y}-
 function cal(){const f=(new Date(U.y,U.m,1).getDay()+6)%7,n=new Date(U.y,U.m+1,0).getDate();
  let h=remBanner()+remNext()+evBanner()+'<div class="wd">'+'LMXJVSD'.split('').map(d=>`<div>${d}</div>`).join('')+'</div><div class="grid">';
  for(let i=0;i<f;i++)h+='<div class="c e"></div>';
- for(let d=1;d<=n;d++){const k=key(U.y,U.m,d),s=S.shifts[k],p=S.partner[k],ev=S.events.some(e=>e.date===k)||!!remText(k),evp=S.events.some(e=>e.date===k&&!e.done)||(!!remText(k)&&!(S.remDone&&S.remDone[k]));
-  h+=`<button class="c${p?' p':''}${k===todayK?' t':''}" data-a="day" data-v="${k}"><span class="n">${d}</span>${s&&SH[s]?`<span class="s${SH[s][0]?'':' L'}" style="color:${SH[s][2]}">${s}</span>${SH[s][0]?`<span class="h">${SH[s][0]}-${SH[s][1]}</span>`:`<span class="h" style="font-size:11px">${SH[s][3]}</span>`}`:''}${ev?`<i class="ev${evp?'':' d'}"></i>`:''}${p?'<i class="hr">❤</i>':''}</button>`}
+ for(let d=1;d<=n;d++){const k=key(U.y,U.m,d),s=S.shifts[k],p=S.partner[k],rv=S.rvac&&S.rvac[k],ev=S.events.some(e=>e.date===k)||!!remText(k),evp=S.events.some(e=>e.date===k&&!e.done)||(!!remText(k)&&!(S.remDone&&S.remDone[k]));
+  h+=`<button class="c${rv?' rv':p?' p':''}${k===todayK?' t':''}" data-a="day" data-v="${k}"><span class="n">${d}</span>${s&&SH[s]?`<span class="s${SH[s][0]?'':' L'}" style="color:${SH[s][2]}">${s}</span>${SH[s][0]?`<span class="h">${SH[s][0]}-${SH[s][1]}</span>`:`<span class="h" style="font-size:11px">${SH[s][3]}</span>`}`:''}${ev?`<i class="ev${evp?'':' d'}"></i>`:''}${rv?'<i class="hr">🌴</i>':p?'<i class="hr">❤</i>':''}</button>`}
  return h+'</div>'}
 
 function sheet(){const k=U.sel,[y,m,d]=k.split('-').map(Number),dt=new Date(y,m-1,d),cur=S.shifts[k];
  const lbl=cap(dt.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}));
  let h=`<div class="bd" data-a="close"></div><div class="sh"><div class="grip"></div><h3>${lbl}</h3><div class="chips">`;
  for(const c in SH)h+=`<button class="chip${cur===c?' on':''}" style="border-color:${SH[c][2]}" data-a="shift" data-v="${c}"><b style="color:${SH[c][2]}">${SH[c][3]} ${c}</b><small>${SH[c][0]?SH[c][0]+'-'+SH[c][1]:'&nbsp;'}</small></button>`;
- h+=`</div><div class="two"><button class="btn g" data-a="shift" data-v="">Sin turno</button><button class="btn" style="background:${S.partner[k]?'#facc15':'#232b40'};color:${S.partner[k]?'#1a1400':'#fff'}" data-a="partner">${S.partner[k]?'✓ Rayco libre':'Rayco libre'}</button></div>${(S.events.some(e=>e.date===k)||remText(k))?'<h3>Agenda</h3>':''}`;
+ h+=`</div><div class="two"><button class="btn g" data-a="shift" data-v="">Sin turno</button><button class="btn" style="background:${S.partner[k]?'#facc15':'#232b40'};color:${S.partner[k]?'#1a1400':'#fff'}" data-a="partner">${S.partner[k]?'✓ Rayco libre':'Rayco libre'}</button></div><button class="btn" style="background:${S.rvac&&S.rvac[k]?'#2dd4bf':'#232b40'};color:${S.rvac&&S.rvac[k]?'#04201c':'#fff'}" data-a="rvac">${S.rvac&&S.rvac[k]?'✓ Rayco vacaciones':'Rayco vacaciones'}</button>${(S.events.some(e=>e.date===k)||remText(k))?'<h3>Agenda</h3>':''}`;
  S.events.filter(e=>e.date===k).sort((a,b)=>a.time<b.time?-1:1).forEach(e=>{h+=agendaRow(e.id,e.done,esc(e.time||'--:--'),esc(e.title))});
  if(remText(k))h+=agendaRow('rem',S.remDone&&S.remDone[k],'🔔',esc(remText(k)));h+=`<h3 style="margin-top:14px">Nueva cita</h3><div class="two"><input id="et" type="time"><input id="en" placeholder="Ej.: Dentista"></div><button class="btn" data-a="addev">Añadir cita</button></div>`;return h}
 
@@ -147,6 +150,7 @@ function remBannerOld(){const t=new Date();for(let i=0;i<2;i++){const dt=new Dat
 function evBanner(){const t=new Date(),t0=new Date(t.getFullYear(),t.getMonth(),t.getDate()),a=S.events.filter(e=>!e.done&&e.date.startsWith(U.y+'-'+pad(U.m+1)+'-')).map(e=>{const[y,m,d]=e.date.split('-').map(Number);return{e,df:Math.round((new Date(y,m-1,d)-t0)/864e5)}}).sort((p,q)=>p.df-q.df||String(p.e.time).localeCompare(String(q.e.time))),w=x=>x.df<0?'Pasada '+fdate(x.e.date):x.df===0?'Hoy':x.df===1?'Mañana':x.df<=7?'En '+x.df+' días':fdate(x.e.date);return a.slice(0,5).map(x=>`<div class="card" style="border-color:#38bdf8;display:flex;align-items:center;gap:10px"><div style="flex:1;min-width:0" data-a="day" data-v="${x.e.date}"><b>🔔 ${w(x)}${x.e.time?' a las '+x.e.time:''}</b><br>${esc(x.e.title)}</div><button class="x" style="background:#232b40;color:var(--mu)" data-a="done" data-v="${x.e.id}">✓</button></div>`).join('')+(a.length>5?`<div class="leg">y ${a.length-5} más pendientes</div>`:'')}
 function remNext(){const t=new Date();if(U.y!==t.getFullYear()||U.m!==t.getMonth())return '';const td=new Date(t.getFullYear(),t.getMonth(),t.getDate()),d=remDate(U.y,U.m),k=key(U.y,U.m,d);if(remText(k)&&!(S.remDone&&S.remDone[k])&&new Date(U.y,U.m,d)>=td)return '';const n=new Date(U.y,U.m+1,1),y=n.getFullYear(),m=n.getMonth(),d2=remDate(y,m),k2=key(y,m,d2),tx=remText(k2),df=Math.round((new Date(y,m,d2)-td)/864e5);if(!tx||(S.remDone&&S.remDone[k2])||df>14)return '';return `<div class="card" style="border-color:#38bdf8;display:flex;align-items:center;gap:10px"><div style="flex:1;min-width:0" data-a="day" data-v="${k2}"><b>🔔 Viernes ${d2} (en ${df} días)</b><br>${esc(tx)}</div><button class="x" style="background:#232b40;color:var(--mu)" data-a="rdone" data-v="${k2}">✓</button></div>`}
 function evBannerOld(){const t=new Date(),t0=new Date(t.getFullYear(),t.getMonth(),t.getDate());return S.events.map(e=>{const[y,m,d]=e.date.split('-').map(Number);return{e,df:Math.round((new Date(y,m-1,d)-t0)/864e5)}}).filter(x=>x.df>=0&&x.df<=3&&!x.e.done).sort((a,b)=>a.df-b.df||String(a.e.time).localeCompare(String(b.e.time))).map(x=>`<div class="card" data-a="day" data-v="${x.e.date}" style="border-color:#38bdf8"><b>🔔 ${x.df===0?'Hoy':x.df===1?'Mañana':'En '+x.df+' días'}${x.e.time?' a las '+x.e.time:''}</b><br>${esc(x.e.title)}</div>`).join('')}
+function rvacCard(){return `<div class="card"><h3>Vacaciones de Rayco</h3><small style="color:var(--mu)">Elige desde y hasta, y pulsa Añadir. También puedes marcarlas día a día con el botón Rayco vacaciones en el panel del día.</small><div class="two" style="margin-top:10px"><input id="rv1" type="date"><input id="rv2" type="date"></div><div class="two"><button class="btn" style="background:#2dd4bf;color:#04201c" data-a="rvadd">Añadir</button><button class="btn g" data-a="rvdel">Quitar</button></div></div>`}
 function qsheet(){const d=(U.y===now.getFullYear()&&U.m===now.getMonth())?todayK:key(U.y,U.m,1);return `<div class="bd" data-a="qclose"></div><div class="sh"><div class="grip"></div><h3>Nueva cita</h3><input id="qt" placeholder="Ej.: Dentista"><div class="two"><input id="qd" type="date" value="${d}"><input id="qh" type="time"></div><button class="btn" data-a="qadd">Añadir cita</button></div>`}
 function vmsg(){const v=U.vs;if(!v||v===1)return '';const t=v==='nosr'?'Este navegador no incluye reconocimiento de voz.':v==='perm'?'No hay permiso de micrófono para esta página. En Chrome: ⋮ → Configuración → Configuración del sitio → Micrófono, y permite esta dirección.':v==='err:no-speech'?'No te he oído. Pulsa el micrófono y habla otra vez.':v==='err:network'?'El dictado necesita conexión a internet.':(v==='err:not-allowed'||v==='err:service-not-allowed')?'Chrome no deja usar el reconocimiento de voz aquí ('+v.slice(4)+'). Prueba abriendo la web en una pestaña de Chrome, o usa el micrófono del teclado.':'No se pudo dictar ('+v+'). Usa el micrófono del teclado.';return `<p style="color:#fca5a5;font-size:13px;margin:6px 0">${t}</p>`}
 function vsheet(){return `<div class="bd" data-a="vclose"></div><div class="sh"><div class="grip"></div><h3>Dictar o escribir</h3>${vmsg()}<small style="color:var(--mu)">Pulsa el micrófono de tu teclado y di, por ejemplo: “Gasolina 40 euros hoy”, “Turno M mañana” o “Crea una cita el lunes a las 11 para el dentista”.</small><input id="vt" placeholder="Escribe o dicta…" style="margin-top:10px"><button class="btn" data-a="vsend">Enviar</button></div>`}
@@ -167,7 +171,7 @@ function gasOld(){const l=monthExp(U.y,U.m);
  return h+'</div>'}
 
 function localCard(){return `<div class="card"><h3>Tus datos, solo en este móvil</h3><small style="color:var(--mu)">Todo se guarda en el almacenamiento de este navegador, sin nube. ${PERSIST?'Almacenamiento protegido ✓':'Haz una copia de vez en cuando.'} Versión de la app: ${VER}. ${(navigator.serviceWorker&&navigator.serviceWorker.controller)?'Lista para usar sin internet ✓':'Para usarla sin internet, ábrela una vez con conexión.'}</small><button class="btn" style="margin-top:10px" data-a="dl">Descargar copia (.json)</button><label class="btn g" style="display:flex;align-items:center;justify-content:center">Importar desde archivo<input type="file" accept=".json,application/json" data-a="rf" style="display:none"></label></div>`}
-function aj(){const o=ajOld();return localCard()+turnosCard()+remCard()+recCard()+o.slice(o.indexOf('<div class="card"><h3>Copia'))}
+function aj(){const o=ajOld();return localCard()+turnosCard()+rvacCard()+remCard()+recCard()+o.slice(o.indexOf('<div class="card"><h3>Copia'))}
 function ajOld(){const mo=v=>MN.map((n,i)=>`<option value="${i}"${i===v?' selected':''}>${cap(n)}</option>`).join('');
  return `<div class="card"><h3>Ciclo de pagos fijos</h3><small style="color:var(--mu)">Mes en que se paga (cada 2 y 3 meses a partir de ahí)</small><p style="margin:10px 0 4px">Sindicato · 32,55 €</p><select data-a="cu">${mo(S.set.u)}</select><p style="margin:6px 0 4px">Seguro de salud · 198,00 €</p><select data-a="cs">${mo(S.set.s)}</select><small style="color:var(--mu)">Alquiler: 623,00 € todos los meses.</small></div>
  <div class="card"><h3>Copia de seguridad</h3><button class="btn" data-a="exp">Exportar (copiar JSON)</button><textarea id="bk" placeholder="Aquí aparece la copia o pega una para importar">${esc(U.bk)}</textarea><button class="btn g" data-a="imp">Importar desde el cuadro</button><button class="btn g" style="color:#ff7a90" data-a="reset">Borrar todo</button></div>`}
@@ -229,6 +233,7 @@ function handle(raw){if(cmdAgenda(raw))return;handleOld(raw)}
 function handleOld(raw){const t=raw.toLowerCase().replace(/,/g,'.'),k=parseDate(t);let m;
  const hit=`<br><small style="color:var(--mu)">“${esc(raw)}”</small>`;
  if(m=t.match(/turno\s+(m|r|t)\s*([1-4])?\b/)){const c=(m[1]+(m[2]||'')).toUpperCase();if(SH[c]){S.shifts[k]=c;save();return toast(`Turno ${c} el ${k.split('-').reverse().join('/')} ✓`+hit)}}
+ if(/rayco/.test(t)&&/vacaci/.test(t)){S.rvac=S.rvac||{};S.rvac[k]=true;delete S.partner[k];save();return toast('Rayco de vacaciones el '+k.split('-').reverse().join('/')+' ✓'+hit)}
  if(/pareja|rayco/.test(t)&&/libre/.test(t)){S.partner[k]=true;save();return toast('Rayco libre el '+k.split('-').reverse().join('/')+' ✓'+hit)}
  if(/vacaci/.test(t)){S.shifts[k]='Vacaciones';save();return toast('Vacaciones el '+k.split('-').reverse().join('/')+' ✓'+hit)}
  if(/\blibre\b/.test(t)&&!/pareja|rayco/.test(t)){S.shifts[k]='Libre';save();return toast('Libre el '+k.split('-').reverse().join('/')+' ✓'+hit)}
@@ -265,7 +270,8 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
  else if(a==='day'){U.sel=v;U.ed=0}
  else if(a==='close'){U.sel=null;U.ed=0}
  else if(a==='shift'){v?S.shifts[U.sel]=v:delete S.shifts[U.sel];save();U.sel=null;U.ed=0}
- else if(a==='partner'){S.partner[U.sel]?delete S.partner[U.sel]:S.partner[U.sel]=true;save();U.sel=null;U.ed=0}
+ else if(a==='partner'){if(S.partner[U.sel])delete S.partner[U.sel];else{S.partner[U.sel]=true;if(S.rvac)delete S.rvac[U.sel]}save();U.sel=null;U.ed=0}
+ else if(a==='rvac'){S.rvac=S.rvac||{};if(S.rvac[U.sel])delete S.rvac[U.sel];else{S.rvac[U.sel]=true;delete S.partner[U.sel]}save();U.sel=null;U.ed=0}
  else if(a==='addev'){const n=val('en').trim();if(!n)return;S.events.push({id:Date.now()+'',date:U.sel,time:val('et'),title:n});save();U.sel=null;toast('Cita añadida ✓',2500)}
  else if(a==='delev'){S.events=S.events.filter(x=>x.id!==v);save();U.sel=null;U.ed=0}
  else if(a==='done'){if(v==='rem'){S.remDone=S.remDone||{};if(S.remDone[U.sel])delete S.remDone[U.sel];else S.remDone[U.sel]=true}else{const e=S.events.find(x=>x.id===v);if(e)e.done=!e.done}save();U.sel=null;U.ed=0}
@@ -280,6 +286,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
  else if(a==='vclose')U.vs=0;
  else if(a==='vsend'){const t=val('vt').trim();U.vs=0;if(t){render();return handle(t)}}
  else if(a==='timp'){const r=impTurnos(val('ti'));toast(r.n+' días añadidos al calendario ✓'+(r.bad.length?'<br><small>No entendí '+r.bad.length+' línea(s): '+esc(r.bad.slice(0,2).join(' | '))+'</small>':''),7000);return}
+ else if(a==='rvadd'||a==='rvdel'){const a1=val('rv1'),a2=val('rv2')||a1;if(!a1)return toast('Elige las fechas.',2500);let d=new Date(a1+'T12:00:00'),e=new Date(a2+'T12:00:00'),n=0;if(e<d)[d,e]=[e,d];S.rvac=S.rvac||{};for(;d<=e&&n<400;d.setDate(d.getDate()+1),n++){const k=key(d.getFullYear(),d.getMonth(),d.getDate());if(a==='rvadd'){S.rvac[k]=true;delete S.partner[k]}else delete S.rvac[k]}save();toast((a==='rvadd'?'Vacaciones de Rayco añadidas':'Vacaciones de Rayco quitadas')+' · '+n+' días ✓',3500)}
  else if(a==='qopen')U.qc=1;
  else if(a==='qclose')U.qc=0;
  else if(a==='qadd'){const n=val('qt').trim();if(!n)return;const dd=val('qd')||todayK;S.events.push({id:Date.now()+'',date:dd,time:val('qh'),title:cap(n)});save();U.qc=0;const p=dd.split('-');U.y=+p[0];U.m=+p[1]-1;toast('Cita añadida ✓ '+fdate(dd),2500)}
